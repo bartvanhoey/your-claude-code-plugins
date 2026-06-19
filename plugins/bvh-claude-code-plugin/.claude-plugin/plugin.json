@@ -1,0 +1,9 @@
+{
+  "name": "bvh-claude-code-plugin",
+  "description": "Free Claude Code Skills, Agents, Hooks and more",
+  "version": "1.0.0",
+  "author": {
+    "name": "Bart Van Hoey",
+    "email": "bartvanhoey@hotmail.com"
+  }
+}

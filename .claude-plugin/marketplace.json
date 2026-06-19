@@ -1,0 +1,14 @@
+{
+  "name": "bvh-claude-code-plugins",
+  "owner": {
+    "name": "Bart Van Hoey"
+  },
+  "description": "Free Claude Code Skills, Agents, Hooks and more",
+  "plugins": [
+    {
+      "name": "bvh-claude-code-plugin",
+      "source": "./plugins/bvh-claude-code-plugin",
+      "description": "A free Claude Code Plugin with many Skills, Agents, Hooks and more"
+    }
+  ]
+}
