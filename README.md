@@ -97,3 +97,13 @@ To refresh the marketplace, run:
     /plugin marketplace update bvh-claude-code-plugins  
     /reload-plugins
 ```
+
+## Private Repository
+
+Install GitHub CLI (winget install GitHub.cli) and authenticate with `gh auth login` first, then you can add a private marketplace with:
+
+```markdown
+! gh auth login
+```
+
+Make repository private on GitHub, and ensure the marketplace.json file is in the .claude-plugin directory of the default branch.
