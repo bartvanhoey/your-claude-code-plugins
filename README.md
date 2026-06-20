@@ -76,3 +76,66 @@ This repository itself follows the structure above. You will definitely need to 
     git commit -m "Install plugin from marketplace"
     git push origin main
 ```
+
+## 5. Updating After You Push Changes
+
+Pushing changes to the GitHub repository does not automatically refresh an already-installed plugin on your machine.
+
+ATTENTION: Running `/plugin marketplace update your-claude-code-plugins` and `/reload-plugins` alone does not refresh an installed plugin.
+
+The issue is that Claude Code only re-syncs an installed plugin's cache when the version field changes — marketplace update just refreshes the catalog of what's available, it doesn't force-refresh already-installed plugins at an unchanged version.
+
+Fix: bump "version" in plugins/your-claude-code-plugin/.claude-plugin/plugin.json (e.g. 1.0.0 → 1.0.1) every time you push skill changes, then run the commands above again. That's the supported workflow for iterating on a plugin.
+
+To do this automatically, you can use a GitHub Action named **bump-version.yml** to bump the version on every push to main:
+
+```yaml
+name: Bump plugin version
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'plugins/your-claude-code-plugin/**'
+
+permissions:
+  contents: write
+
+jobs:
+  bump-version:
+    if: "!contains(github.event.head_commit.message, '[skip version]')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Bump patch version
+        id: bump
+        run: |
+          FILE=plugins/your-claude-code-plugin/.claude-plugin/plugin.json
+          VERSION=$(jq -r .version "$FILE")
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
+          jq --arg v "$NEW_VERSION" '.version = $v' "$FILE" > "$FILE.tmp" && mv "$FILE.tmp" "$FILE"
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add plugins/your-claude-code-plugin/.claude-plugin/plugin.json
+          git commit -m "chore: bump plugin version to ${{ steps.bump.outputs.new_version }} [skip version]"
+          git push
+```
+
+One-time setup needed on GitHub (so the bot can push):
+  Repo → Settings → Actions → General → Workflow permissions → set to "Read and write permissions".
+
+Now every time you push to main, the version in plugin.json will auto-increment. After the Action runs, refresh locally:
+
+```markdown
+/plugin marketplace update your-claude-code-plugins
+/reload-plugins
+```
