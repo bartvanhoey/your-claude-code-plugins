@@ -1,7 +1,7 @@
 {
   "name": "your-claude-code-plugin",
   "description": "Free Claude Code Skills, Agents, Hooks and more",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": {
     "name": "Your Name",
     "email": "yourname@youremailprovider.com"
