@@ -1,4 +1,4 @@
-# Publish & Consume Claude Code plugins from a GitHub repository
+## Publish & Consume Claude Code plugins from a GitHub repository
 
 ## Create and clone an empty public GitHub repository
 
@@ -77,7 +77,7 @@ This repository itself follows the structure above. You will definitely need to 
     git push origin main
 ```
 
-## 5. Updating After You Push Changes
+## 5. Bump version to refresh plugin after pushing changes
 
 Pushing changes to the GitHub repository does not automatically refresh an already-installed plugin on your machine.
 
@@ -87,7 +87,7 @@ The issue is that Claude Code only re-syncs an installed plugin's cache when the
 
 Fix: bump "version" in plugins/your-claude-code-plugin/.claude-plugin/plugin.json (e.g. 1.0.0 → 1.0.1) every time you push skill changes, then run the commands above again. That's the supported workflow for iterating on a plugin.
 
-To do this automatically, you can use a GitHub Action named **bump-version.yml** to bump the version on every push to main:
+To do this automatically, you can create a GitHub Action named **bump-version.yml** to bump the version on every push to main:
 
 ```yaml
 name: Bump plugin version
@@ -133,9 +133,32 @@ jobs:
 One-time setup needed on GitHub (so the bot can push):
   Repo → Settings → Actions → General → Workflow permissions → set to "Read and write permissions".
 
-Now every time you push to main, the version in plugin.json will auto-increment. After the Action runs, refresh locally:
+Now every time a skill has changed and you push to main, the version in plugin.json will auto-increment. After the Action runs, refresh locally:
 
-```markdown
+```text
 /plugin marketplace update your-claude-code-plugins
 /reload-plugins
+```
+
+WARNING: Be mindful that this workflow action will create a new commit on every time it runs.
+Your local repository will be out of sync with the remote after this run, so you will need to pull the changes before pushing new changes:
+
+```bash
+    git pull origin main
+    # resolve any merge conflicts if necessary
+    git add .
+    git commit -m "Your commit message"
+    git push origin main
+```
+
+## 6. Set Up Private Repository Access
+
+Claude Code can add a marketplace from a private GitHub repo, but it needs Git access to clone it first:
+
+1. Make the repository private on GitHub, and make sure `.claude-plugin/marketplace.json` lives at the repo root on the default branch.
+2. Install the GitHub CLI (`winget install GitHub.cli`).
+3. Authenticate — when prompted, also choose to authenticate Git with your GitHub credentials, so `git clone` works for the private repo over HTTPS:
+
+```text
+! gh auth login
 ```
