@@ -1,4 +1,4 @@
-## Publish & Consume Claude Code plugins from a GitHub repository
+# Publish & Consume Claude Code plugins from a GitHub repository
 
 ## Create and clone an empty public GitHub repository
 
@@ -46,8 +46,7 @@ This repository itself follows the structure above. You will definitely need to 
         /plugin marketplace add <your-github-account>/your-claude-code-plugins
     ```
 
-    This clones your GitHub repo and reads .claude-plugin/marketplace.json, registering the catalog —
-    nothing gets installed yet.
+    This clones your GitHub repo and reads .claude-plugin/marketplace.json, registering the catalog — nothing gets installed yet.
 
 2. Install the plugin from it:
 
@@ -69,19 +68,12 @@ This repository itself follows the structure above. You will definitely need to 
         /your-claude-code-plugin:hello-world
     ```
 
-## 4. Push your changes to GitHub
-
-```bash
-    git add .
-    git commit -m "Install plugin from marketplace"
-    git push origin main
-```
-
-## 5. Bump version to refresh plugin after pushing changes
+## 4. Bump version to refresh plugin after pushing changes
 
 Pushing changes to the GitHub repository does not automatically refresh an already-installed plugin on your machine.
 
-ATTENTION: Running `/plugin marketplace update your-claude-code-plugins` and `/reload-plugins` alone does not refresh an installed plugin.
+> [!WARNING]
+> Running `/plugin marketplace update your-claude-code-plugins` and `/reload-plugins` alone does not refresh an installed plugin.
 
 The issue is that Claude Code only re-syncs an installed plugin's cache when the version field changes — marketplace update just refreshes the catalog of what's available, it doesn't force-refresh already-installed plugins at an unchanged version.
 
@@ -140,8 +132,9 @@ Now every time a skill has changed and you push to main, the version in plugin.j
 /reload-plugins
 ```
 
-WARNING: Be mindful that this workflow action will create a new commit on every time it runs.
-Your local repository will be out of sync with the remote after this run, so you will need to pull the changes before pushing new changes:
+> [!WARNING]
+> Be mindful that this workflow action will create a new commit on every time it runs.
+> Your local repository will be out of sync with the remote after this run, so you will need to pull the changes before pushing new changes:
 
 ```bash
     git pull origin main
@@ -151,7 +144,7 @@ Your local repository will be out of sync with the remote after this run, so you
     git push origin main
 ```
 
-## 6. Set Up Private Repository Access
+## 5. Set Up Private Repository Access
 
 Claude Code can add a marketplace from a private GitHub repo, but it needs Git access to clone it first:
 
