@@ -1,17 +1,19 @@
-# Publish & Consume Claude Code plugins from a GitHub repository
+# Claude Code Plugin Marketplace on GitHub
 
-## Create and clone an empty public GitHub repository
+A step-by-step guide to publishing Claude Code plugins from your own GitHub repository and installing them via a self-hosted marketplace — including versioning, private repos, and multi-user access.
+
+## Create and Clone an Empty Public GitHub Repository
 
 ```bash
     git clone https://github.com/<your-github-account>/your-claude-code-plugins.git
     cd your-claude-code-plugins
 ```
 
-## 1. Create the marketplace plugin structure
+## 1. Create the Marketplace Plugin Structure
 
-Below is an example of how to structure your repository. The `marketplace.json` file is required and should be placed in the `.claude-plugin` directory at the root of your repository.
+Below is an example of how to structure your repository. The [`marketplace.json`](.claude-plugin/marketplace.json) file is required and should be placed in the `.claude-plugin` directory at the root of your repository.
 
-Each plugin should have its own directory under `plugins/`, and each plugin should have its own `.claude-plugin/plugin.json` file and a `skills/` directory containing the skill markdown files.
+Each plugin should have its own directory under `plugins/`, and each plugin should have its own [`.claude-plugin/plugin.json`](plugins/your-claude-code-plugin/.claude-plugin/plugin.json) file and a `skills/` directory containing the skill markdown files.
 
 ```text
     your-claude-code-plugins/
@@ -30,7 +32,7 @@ Each plugin should have its own directory under `plugins/`, and each plugin shou
 
 This repository itself follows the structure above. You will definitely need to change the folder names, the content of the `marketplace.json`, `plugin.json` and skills to reflect your own plugin and skills.
 
-## 2. Push your changes to GitHub
+## 2. Push Your Changes to GitHub
 
 ```bash
     git add .
@@ -38,7 +40,7 @@ This repository itself follows the structure above. You will definitely need to 
     git push origin main
 ```
 
-## 3. Install Plugin from your Marketplace
+## 3. Install Plugin from Your Marketplace
 
 1. Add your marketplace (run inside a Claude Code session):
 
@@ -68,7 +70,7 @@ This repository itself follows the structure above. You will definitely need to 
         /your-claude-code-plugin:hello-world
     ```
 
-## 4. Bump version to refresh plugin after pushing changes
+## 4. Bump Version to Refresh Plugin after Pushing Changes
 
 Pushing changes to the GitHub repository does not automatically refresh an already-installed plugin on your machine.
 
@@ -77,9 +79,9 @@ Pushing changes to the GitHub repository does not automatically refresh an alrea
 
 The issue is that Claude Code only re-syncs an installed plugin's cache when the version field changes — marketplace update just refreshes the catalog of what's available, it doesn't force-refresh already-installed plugins at an unchanged version.
 
-Fix: bump "version" in plugins/your-claude-code-plugin/.claude-plugin/plugin.json (e.g. 1.0.0 → 1.0.1) every time you push skill changes, then run the commands above again. That's the supported workflow for iterating on a plugin.
+Fix: bump "version" in plugins/your-claude-code-plugin/.claude-plugin/plugin.json (e.g. 1.0.0 → 1.0.1) every time you push skill changes, then push again (Step 2) and run `/plugin marketplace update` + `/reload-plugins` to refresh. That's the supported workflow for iterating on a plugin.
 
-To do this automatically, you can create a GitHub Action named **bump-version.yml** to bump the version on every push to main:
+To do this automatically, you can create a GitHub Action named [**bump-version.yml**](.github/workflows/bump-version.yml) to bump the version on every push to main:
 
 ```yaml
 name: Bump plugin version
@@ -128,8 +130,8 @@ One-time setup needed on GitHub (so the bot can push):
 Now every time a skill has changed and you push to main, the version in plugin.json will auto-increment. After the Action runs, refresh locally:
 
 ```text
-/plugin marketplace update your-claude-code-plugins
-/reload-plugins
+    /plugin marketplace update your-claude-code-plugins
+    /reload-plugins
 ```
 
 > [!WARNING]
@@ -149,9 +151,33 @@ Now every time a skill has changed and you push to main, the version in plugin.j
 Claude Code can add a marketplace from a private GitHub repo, but it needs Git access to clone it first:
 
 1. Make the repository private on GitHub, and make sure `.claude-plugin/marketplace.json` lives at the repo root on the default branch.
-2. Install the GitHub CLI (`winget install GitHub.cli`).
+2. Open a terminal and install the GitHub CLI (`winget install GitHub.cli`).
 3. Authenticate — when prompted, also choose to authenticate Git with your GitHub credentials, so `git clone` works for the private repo over HTTPS:
 
-```text
-! gh auth login
-```
+    ```bash
+        gh auth login
+    ```
+
+4. Now you can update the marketplace in Claude Code as before, using the same command but with your private repo
+
+    ```text
+        /plugin marketplace update your-claude-code-plugins
+        /reload-plugins
+    ```
+
+## 6. Add Other Users
+
+Other users don't need your GitHub credentials — they authenticate with their own GitHub account, and you just grant that account access to the private repo.
+
+1. Give each user access to the repository:
+    - **A few users:** GitHub → repo → Settings → Collaborators → Add people, and invite their GitHub username or email.
+    - **Many users:** Move the repo into a GitHub Organization, create a Team, and add users to it with read access to the repo.
+2. Each user installs the GitHub CLI and authenticates with their own account:
+
+    ```bash
+        gh auth login
+    ```
+
+3. Once they've accepted the invite and authenticated, they follow the same steps in the "Install Plugin from Your Marketplace" section above — using their own GitHub account, not yours.
+
+A shared, read-only Personal Access Token is an alternative to collaborator invites, but it's still a secret you'd need to distribute and rotate — granting access per-account is cleaner for ongoing use.
