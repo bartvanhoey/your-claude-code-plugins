@@ -1,6 +1,6 @@
-# How to Publish and Consume your own Claude Code plugins from a GitHub repository
+# Publish & Consume Claude Code plugins from a GitHub repository
 
-## Create and clone a completely empty public GitHub repository
+## Create and clone an empty public GitHub repository
 
 ```bash
     git clone https://github.com/<your-github-account>/your-claude-code-plugins.git
@@ -38,7 +38,7 @@ This repository itself follows the structure above. You will definitely need to 
     git push origin main
 ```
 
-## 3. Install Plugin from your Marketplace in Claude Code
+## 3. Install Plugin from your Marketplace
 
 1. Add your marketplace (run inside a Claude Code session):
 
