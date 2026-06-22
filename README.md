@@ -186,7 +186,7 @@ A shared, read-only Personal Access Token is an alternative to collaborator invi
 
 This repo ships two layers of protection that pull the latest changes before any `git push`, so you never push against a stale branch:
 
-1. **Git-native hook** (`.githooks/pre-push`) — runs for *any* push, from any tool or terminal. It runs `git pull`; if that fails (conflicts) or brings in new commits, it aborts the push so you can resolve and re-run it against the now up-to-date branch.
+1. **Git-native hook** (`.githooks/pre-push`) — runs for *any* push, from any tool or terminal. It runs `git pull` first; a clean pull (fast-forward or auto-merge) lets the push continue with the newly merged commits, while a failed pull (conflicts) aborts the push so you can resolve manually and re-run it.
 2. **Claude Code hook** (`.claude/settings.json` → `PreToolUse`) — fires before Claude itself runs a `Bash`/`PowerShell` command matching `git push`, doing the same check so Claude proactively pulls instead of attempting a push that would get rejected.
 
 ### Activating the git-native hook
