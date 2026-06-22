@@ -219,3 +219,76 @@ If you're using plain `git` without Claude Code, run that command once after clo
 ```
 
 `git-push-pull-check.sh` needs `bash` and `jq` on `PATH`. Both ship with Git for Windows; on Linux/macOS install `jq` separately if it's missing (`apt install jq` / `brew install jq`) — without it the check just fails open (silently skips the pull, push proceeds normally).
+
+## 8. Remind Consuming Apps About Marketplace Updates
+
+Pushing new commits to this marketplace repo doesn't notify anyone who already has it installed — they only find out by remembering to run `/plugin marketplace update your-claude-code-plugins` themselves. A `SessionStart` hook in the **consuming app** closes that gap: every time someone opens that project in Claude Code, it quietly checks whether the cached marketplace is behind `origin`, and only speaks up when there's actually something new.
+
+### Add the hook to the consuming app
+
+Add to the consuming app's `.claude/settings.json` — check it in so every teammate who clones the app gets the reminder automatically, or put the same snippet in `~/.claude/settings.json` instead if you want it to apply to every project on just your own machine:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/check-marketplace-update.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+`.claude/hooks/check-marketplace-update.sh`:
+
+```bash
+    #!/bin/sh
+    # SessionStart hook: reminds you to update the your-claude-code-plugins
+    # marketplace if the cached copy is behind origin. Stays silent when current.
+
+    MP_DIR="$HOME/.claude/plugins/marketplaces/your-claude-code-plugins"
+    [ -d "$MP_DIR/.git" ] || exit 0
+
+    git -C "$MP_DIR" fetch --quiet origin 2>/dev/null
+
+    branch=$(git -C "$MP_DIR" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##')
+    [ -n "$branch" ] || exit 0
+
+    behind=$(git -C "$MP_DIR" rev-list --count "HEAD..origin/$branch" 2>/dev/null)
+    [ -n "$behind" ] && [ "$behind" -gt 0 ] || exit 0
+
+    jq -n --arg n "$behind" \
+        '{systemMessage: ("⚡ your-claude-code-plugins marketplace has " + $n + " new commit(s) available. Run: /plugin marketplace update your-claude-code-plugins then /reload-plugins")}'
+```
+
+Make it executable so the mode is respected on Linux/macOS clones too (same `core.fileMode` caveat as Section 7):
+
+```bash
+    git update-index --chmod=+x .claude/hooks/check-marketplace-update.sh
+```
+
+### Why a SessionStart hook instead of a git hook
+
+It's tempting to wire this up as a `post-merge` hook in `.git/hooks/` of the consuming app instead, so it fires right after `git pull`. Two problems rule that out:
+
+- `.git/hooks/` isn't version-controlled — it only exists on whoever's machine set it up, and won't follow the repo to a fresh clone or a teammate's machine.
+- It's the wrong signal — pulling the *consuming app's* own commits has nothing to do with whether the marketplace repo changed upstream. It would nag on every pull regardless of whether the marketplace actually changed, and it stays silent forever if the team uses `git pull --rebase` (no merge commit, so `post-merge` never fires).
+
+A `SessionStart` hook checks the real thing — the marketplace's own git history — at the moment it actually matters (before you start using its plugins), and when committed to `.claude/settings.json`, it propagates to every clone the normal way: through version control.
+
+### Files involved
+
+```text
+    .claude/
+    ├── settings.json                       # wires up the hook below
+    └── hooks/
+        └── check-marketplace-update.sh     # SessionStart: warns if the marketplace is behind origin
+```
+
+`check-marketplace-update.sh` needs `git` and `jq` on `PATH` — both ship with Git for Windows; on Linux/macOS install `jq` separately if it's missing (`apt install jq` / `brew install jq`).
