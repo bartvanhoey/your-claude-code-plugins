@@ -181,3 +181,41 @@ Other users don't need your GitHub credentials — they authenticate with their 
 3. Once they've accepted the invite and authenticated, they follow the same steps in the "Install Plugin from Your Marketplace" section above — using their own GitHub account, not yours.
 
 A shared, read-only Personal Access Token is an alternative to collaborator invites, but it's still a secret you'd need to distribute and rotate — granting access per-account is cleaner for ongoing use.
+
+## 7. Set Up Pull-Before-Push Safety Hooks
+
+This repo ships two layers of protection that pull the latest changes before any `git push`, so you never push against a stale branch:
+
+1. **Git-native hook** (`.githooks/pre-push`) — runs for *any* push, from any tool or terminal. It runs `git pull`; if that fails (conflicts) or brings in new commits, it aborts the push so you can resolve and re-run it against the now up-to-date branch.
+2. **Claude Code hook** (`.claude/settings.json` → `PreToolUse`) — fires before Claude itself runs a `Bash`/`PowerShell` command matching `git push`, doing the same check so Claude proactively pulls instead of attempting a push that would get rejected.
+
+### Activating the git-native hook
+
+Git only runs hooks from `.githooks/` once it's told where to look. A `SessionStart` hook (`.claude/hooks/configure-git-hooks-path.sh`) does this automatically the first time you open this repo in Claude Code:
+
+```bash
+    git config core.hooksPath .githooks
+```
+
+If you're using plain `git` without Claude Code, run that command once after cloning.
+
+> [!WARNING]
+> On Windows, `core.fileMode` typically defaults to `false`, so `chmod +x .githooks/pre-push` won't be reflected in the committed file mode. Make sure the hook is tracked as executable, otherwise git silently skips it on Linux/macOS clones:
+>
+> ```bash
+>     git update-index --chmod=+x .githooks/pre-push
+> ```
+
+### Files involved
+
+```text
+    .githooks/
+    └── pre-push                          # git-native pre-push hook
+    .claude/
+    ├── settings.json                     # wires up the hooks below
+    └── hooks/
+        ├── git-push-pull-check.sh        # PreToolUse: pull before Claude's `git push`
+        └── configure-git-hooks-path.sh   # SessionStart: sets core.hooksPath automatically
+```
+
+`git-push-pull-check.sh` needs `bash` and `jq` on `PATH`. Both ship with Git for Windows; on Linux/macOS install `jq` separately if it's missing (`apt install jq` / `brew install jq`) — without it the check just fails open (silently skips the pull, push proceeds normally).
